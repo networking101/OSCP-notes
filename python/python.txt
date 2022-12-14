@@ -1,0 +1,4 @@
+# uncompyle6
+# Can be used to view compiled python resources
+# 192.168.X.102 Djinn3
+/home/kali/.local/bin/uncompyle6 syncer.cpython-38.pyc

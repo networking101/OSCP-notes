@@ -1,0 +1,15 @@
+$d=[System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain();
+$q=("LDAP://"+($d.PdcRoleOwner).Name+"/DC="+($d.Name.Replace('.',',DC=')));
+$s=New-Object System.DirectoryServices.DirectorySearcher([ADSI]$q);
+$s.SearchRoot=(New-Object System.DirectoryServices.DirectoryEntry);
+$s.filter="(objectCategory=computer)";
+$s.FindAll() | ? {
+ if ($_.Path.Contains("OU=Servers,")) {
+   $h=$_.Path.split(",")[0].replace("LDAP://CN=","");
+   $ip=(nslookup "$h.svcorp.com" 10.11.1.20 2>null | select-string -pattern "Address:")[1];
+   write-host "$h.svcorp.com";
+   if ($ip -ne $null) {
+     write-host ("IP -> " + $ip.tostring().split(":")[1].trim());
+   }
+ }
+};

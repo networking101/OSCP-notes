@@ -1,0 +1,2 @@
+WINRM:
+evil-winrm -i 10.11.1.111 -u juju -p 'password'

